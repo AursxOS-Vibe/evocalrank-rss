@@ -1,0 +1,66 @@
+name: Update RSS feed
+
+on:
+  schedule:
+    # UTC 01:00 = 北京时间 09:00；周刊周日 08:00 发布，每天跑一次即可捕获新刊
+    - cron: "0 1 * * *"
+  workflow_dispatch:        # 允许在 Actions 页面手动点按钮立即刷新
+  push:
+    branches: [ main ]      # 首次推送/改脚本时也会生成一次
+
+permissions:
+  contents: write           # 提交更新后的 feed.xml
+  pages: write              # 部署 GitHub Pages
+  id-token: write           # deploy-pages 需要 OIDC
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-feed:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate RSS
+        run: python evocalrank2rss.py -n 20 -o feed.xml
+
+      - name: Commit feed if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- feed.xml; then
+            git add feed.xml
+            git commit -m "chore: update RSS feed ($(date -u +%F))"
+            git push
+          else
+            echo "feed 无变化，跳过提交"
+          fi
+
+      - name: Stage site files
+        run: |
+          mkdir -p _site
+          cp feed.xml _site/feed.xml
+          touch _site/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
