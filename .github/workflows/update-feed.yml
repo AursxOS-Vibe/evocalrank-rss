@@ -51,6 +51,7 @@ jobs:
         run: |
           mkdir -p _site
           cp feed.xml _site/feed.xml
+          [ -f index.html ] && cp index.html _site/index.html
           touch _site/.nojekyll
 
       - name: Setup Pages
