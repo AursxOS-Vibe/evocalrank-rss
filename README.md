@@ -51,5 +51,8 @@ python3 evocalrank2rss.py -n 0                # 全部历史 224 期
 
 - GitHub Actions 定时任务在高峰期可能延迟十几分钟到几小时，对周更内容无影响。
 - Pages 返回的 Content-Type 是 `application/xml`，几乎所有 RSS 阅读器都能正常识别。
-- 若仓库 60 天无任何活动 Actions 会暂停定时——本仓库每次生成新刊都会提交新 commit，正常情况下不会触发。
+- 若仓库 60 天无任何活动，Actions 会暂停定时。本工作流每次运行都会把 `feed.xml`
+  （含 `lastBuildDate`）提交回仓库，相当于每天一次心跳，可稳定规避这个限制；
+  代价是提交历史里会每天多一条 `chore: update RSS feed`。若嫌吵，可把脚本里的
+  `lastBuildDate` 改成固定值或删掉「Commit feed if changed」步骤。
 - 数据与榜单归 evocalrank 组委会所有，本工具仅作个人/公众聚合阅读订阅，条目内均附官网与 B 站原链，请保留出处。
